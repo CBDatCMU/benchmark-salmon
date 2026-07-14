@@ -1,0 +1,22 @@
+# reference data and generated reads are large, don't commit
+reference/*.fa
+reference/*.fasta
+reference/*.gtf
+reference/*.gz
+flux_simulator/configs/*.par
+flux_simulator/reads/
+*.fastq
+*.fq
+*.fq.gz
+
+# Salmon index (rebuilt per node)
+salmon_index/
+*_index/
+
+# logs
+*.log
+nohup.out
+
+# python
+__pycache__/
+*.pyc
