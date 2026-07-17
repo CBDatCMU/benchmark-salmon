@@ -10,8 +10,8 @@
 set -euo pipefail
 
 OUTDIR="$(dirname "$0")"
-FASTA_BASE="https://ftp.ensembl.org/pub/current_fasta/saccharomyces_cerevisiae"
-GTF_BASE="https://ftp.ensembl.org/pub/current_gtf/saccharomyces_cerevisiae"
+FASTA_BASE="https://ftp.ensembl.org/pub/current/fasta/saccharomyces_cerevisiae"
+GTF_BASE="https://ftp.ensembl.org/pub/current/gtf/saccharomyces_cerevisiae"
 
 echo "[1/3] Downloading yeast genome FASTA..."
 curl -L -o "${OUTDIR}/genome.fa.gz" "${FASTA_BASE}/dna/Saccharomyces_cerevisiae.R64-1-1.dna.toplevel.fa.gz"

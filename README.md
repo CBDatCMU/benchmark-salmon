@@ -44,12 +44,18 @@ benchmark-salmon/
    transcripts) to confirm the whole pipeline works end-to-end quickly, before committing to the
    full human GENCODE reference and the full 108-run matrix.
 1. `bash reference/download_reference.sh` — fetch reference genome + GTF
-2. `bash flux_simulator/generate_reads.sh` — simulate the 9 read datasets (1M/10M/50M x 76/100/150bp)
-3. `bash build_index.sh <reference.fa> <index_dir>` — build the Salmon index once per node
-4. Run the sweep:
+2. Create a dedicated Flux Simulator env (newer JDKs break it via
+   `InaccessibleObjectException`) and activate it:
+   `mamba create -n flux-sim -c bioconda -c conda-forge flux-simulator openjdk=8 -y && conda activate flux-sim`
+3. `bash flux_simulator/generate_reads.sh reference/genome.fa reference/annotation.gtf <output_dir>`
+   — simulates the 9 read datasets (1M/10M/50M x 76/100/150bp). Auto-splits the genome into
+   per-chromosome FASTA files (Flux Simulator requirement) and per-dataset mate1/mate2 FASTA
+   files (for `salmon quant -1/-2`) on first run.
+4. `bash build_index.sh <reference.fa> <index_dir>` — build the Salmon index once per node
+5. Run the sweep:
    - lanec2: `nohup bash submit_lanec2.sh > lanec2_run.log 2>&1 &`
    - Bridges-2 RM: `sbatch submit_bridges2_rm.sh`
-5. Results land as CSV files under `results/<node>/`
+6. Results land as CSV files under `results/<node>/`
 
 ## Status
 
