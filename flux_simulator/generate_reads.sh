@@ -19,9 +19,9 @@
 
 set -euo pipefail
 
-GENOME_FASTA="${1:?usage: generate_reads.sh <genome_fasta> <annotation.gtf> <output_dir>}"
-GTF_FILE="${2:?missing annotation.gtf}"
-OUTDIR="${3:?missing output_dir}"
+GENOME_FASTA="$(realpath "${1:?usage: generate_reads.sh <genome_fasta> <annotation.gtf> <output_dir>}")"
+GTF_FILE="$(realpath "${2:?missing annotation.gtf}")"
+OUTDIR="$(realpath -m "${3:?missing output_dir}")"
 
 if ! command -v flux-simulator > /dev/null 2>&1; then
   echo "ERROR: flux-simulator not found on PATH." >&2
@@ -32,7 +32,7 @@ fi
 READ_COUNTS=(1000000 10000000 50000000)   # 1M, 10M, 50M
 READ_LENGTHS=(76 100 150)
 
-CONFIG_DIR="$(dirname "$0")/configs"
+CONFIG_DIR="$(realpath -m "$(dirname "$0")/configs")"
 CHROM_DIR="${OUTDIR}/genome_chroms"
 mkdir -p "${CONFIG_DIR}" "${OUTDIR}" "${CHROM_DIR}"
 
@@ -82,4 +82,3 @@ EOF
 done
 
 echo "All 9 datasets generated under ${OUTDIR}/<reads>reads_<len>bp/ (simulation_1.fasta / simulation_2.fasta)"
-
