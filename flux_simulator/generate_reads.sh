@@ -51,6 +51,11 @@ for reads in "${READ_COUNTS[@]}"; do
     work_dir="${OUTDIR}/${label}"
     mkdir -p "${work_dir}"
 
+    if [ -s "${work_dir}/simulation_1.fasta" ] && [ -s "${work_dir}/simulation_2.fasta" ]; then
+      echo "=== Skipping ${label} (already complete) ==="
+      continue
+    fi
+
     cat > "${par_file}" <<EOF
 REF_FILE_NAME   ${GTF_FILE}
 GEN_DIR         ${CHROM_DIR}
