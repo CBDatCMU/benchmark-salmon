@@ -15,7 +15,7 @@ Usage:
         [--index-build-time /path/to/index_build_time.txt]
 
 Assumes each dataset lives under <reads-dir>/<reads>reads_<len>bp/ and contains
-paired-end FASTA files named simulation_1.fasta / simulation_2.fasta, as
+paired-end FASTA files named simulation_1.fastq / simulation_2.fastq, as
 produced by flux_simulator/generate_reads.sh (which splits Flux Simulator's
 single interleaved output into separate mate1/mate2 files).
 """
@@ -32,8 +32,8 @@ READ_COUNTS = [1_000_000, 10_000_000, 50_000_000]
 READ_LENGTHS = [76, 100, 150]
 THREAD_COUNTS = [1, 2, 4, 8, 16, 32]
 
-READ1_NAME = "simulation_1.fasta"
-READ2_NAME = "simulation_2.fasta"
+READ1_NAME = "simulation_1.fastq"
+READ2_NAME = "simulation_2.fastq"
 
 
 def parse_time_v(stderr_text: str) -> dict:
