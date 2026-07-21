@@ -32,8 +32,8 @@ READ_COUNTS = [1_000_000, 10_000_000, 50_000_000]
 READ_LENGTHS = [76, 100, 150]
 THREAD_COUNTS = [1, 2, 4, 8, 16, 32]
 
-READ1_NAME = "simulation_1.fastq"
-READ2_NAME = "simulation_2.fastq"
+READ1_NAME = "simulation_1.fastq.gz"
+READ2_NAME = "simulation_2.fastq.gz"
 
 
 def parse_time_v(stderr_text: str) -> dict:

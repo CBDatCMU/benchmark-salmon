@@ -37,7 +37,7 @@ for reads in "${READ_COUNTS[@]}"; do
     work_dir="${OUTDIR}/${label}"
     mkdir -p "${work_dir}"
 
-    if [ -s "${work_dir}/simulation_1.fastq" ] && [ -s "${work_dir}/simulation_2.fastq" ]; then
+    if [ -s "${work_dir}/simulation_1.fastq.gz" ] && [ -s "${work_dir}/simulation_2.fastq.gz" ]; then
       echo "=== Skipping ${label} (already complete) ==="
       continue
     fi
@@ -49,10 +49,10 @@ for reads in "${READ_COUNTS[@]}"; do
            -r 0 -R 0 -e 0.001 -E 0.001 \
            "${TRANSCRIPTS_FASTA}" "${work_dir}/simulation"
 
-    mv "${work_dir}/simulation.bwa.read1.fastq" "${work_dir}/simulation_1.fastq"
-    mv "${work_dir}/simulation.bwa.read2.fastq" "${work_dir}/simulation_2.fastq"
-    rm -f "${work_dir}/simulation.bfast.fastq" "${work_dir}/simulation.mutations.txt"
+    mv "${work_dir}/simulation.bwa.read1.fastq.gz" "${work_dir}/simulation_1.fastq.gz"
+    mv "${work_dir}/simulation.bwa.read2.fastq.gz" "${work_dir}/simulation_2.fastq.gz"
+    rm -f "${work_dir}/simulation.bfast.fastq.gz" "${work_dir}/simulation.mutations.txt" "${work_dir}/simulation.mutations.vcf"
   done
 done
 
-echo "All 9 datasets generated under ${OUTDIR}/<reads>reads_<len>bp/ (simulation_1.fastq / simulation_2.fastq)"
+echo "All 9 datasets generated under ${OUTDIR}/<reads>reads_<len>bp/ (simulation_1.fastq.gz / simulation_2.fastq.gz)"
