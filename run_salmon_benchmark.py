@@ -4,7 +4,13 @@ Core Salmon quantification benchmark driver.
 
 Sweeps across the 9 synthetic datasets (1M/10M/50M reads x 76/100/150bp) and
 6 thread counts (1,2,4,8,16,32), running `salmon quant` for each combination
-and recording wall time, CPU utilization, and peak memory via `/usr/bin/time -v`.
+and recording wall time, CPU utilization, and peak memory.
+
+Metrics are collected via os.wait4() on the salmon subprocess directly (no
+`/usr/bin/time` dependency -- that binary isn't present on every node, e.g.
+lanec2). os.wait4() returns the exact resource usage (ru_utime, ru_stime,
+ru_maxrss) for that one child process, which is more precise than GNU time's
+own accounting and works identically on any Linux node.
 
 Usage:
     python3 run_salmon_benchmark.py \
@@ -15,14 +21,14 @@ Usage:
         [--index-build-time /path/to/index_build_time.txt]
 
 Assumes each dataset lives under <reads-dir>/<reads>reads_<len>bp/ and contains
-paired-end FASTA files named simulation_1.fastq / simulation_2.fastq, as
-produced by flux_simulator/generate_reads.sh (which splits Flux Simulator's
-single interleaved output into separate mate1/mate2 files).
+paired-end gzipped FASTQ files named simulation_1.fastq.gz / simulation_2.fastq.gz,
+as produced by read_simulation/generate_reads.sh (dwgsim). Salmon reads gzipped
+FASTQ natively, so these are left compressed.
 """
 
 import argparse
 import csv
-import re
+import os
 import subprocess
 import sys
 import time
@@ -36,35 +42,6 @@ READ1_NAME = "simulation_1.fastq.gz"
 READ2_NAME = "simulation_2.fastq.gz"
 
 
-def parse_time_v(stderr_text: str) -> dict:
-    """Parse `/usr/bin/time -v` output for wall time, max RSS, and CPU%."""
-    wall_time_match = re.search(r"Elapsed \(wall clock\) time.*?: (.+)", stderr_text)
-    max_rss_match = re.search(r"Maximum resident set size \(kbytes\): (\d+)", stderr_text)
-    cpu_pct_match = re.search(r"Percent of CPU this job got: (\d+)%", stderr_text)
-
-    wall_time_raw = wall_time_match.group(1).strip() if wall_time_match else None
-    wall_time_sec = _wall_time_to_seconds(wall_time_raw) if wall_time_raw else None
-
-    return {
-        "wall_time_sec": wall_time_sec,
-        "peak_mem_mb": (int(max_rss_match.group(1)) / 1024) if max_rss_match else None,
-        "cpu_percent": int(cpu_pct_match.group(1)) if cpu_pct_match else None,
-    }
-
-
-def _wall_time_to_seconds(raw: str) -> float:
-    # Formats: "h:mm:ss" or "m:ss.ss"
-    parts = raw.split(":")
-    parts = [float(p) for p in parts]
-    if len(parts) == 3:
-        h, m, s = parts
-        return h * 3600 + m * 60 + s
-    elif len(parts) == 2:
-        m, s = parts
-        return m * 60 + s
-    return float(raw)
-
-
 def run_one(index_dir: Path, reads_dir: Path, reads: int, length: int, threads: int, tmp_out: Path):
     dataset_dir = reads_dir / f"{reads}reads_{length}bp"
     r1 = dataset_dir / READ1_NAME
@@ -75,8 +52,10 @@ def run_one(index_dir: Path, reads_dir: Path, reads: int, length: int, threads: 
         return None
 
     quant_out = tmp_out / f"{reads}reads_{length}bp_t{threads}"
+    quant_out.mkdir(parents=True, exist_ok=True)
+    log_path = quant_out / "salmon_stdout_stderr.log"
+
     cmd = [
-        "/usr/bin/time", "-v",
         "salmon", "quant",
         "-i", str(index_dir),
         "-l", "A",
@@ -85,15 +64,26 @@ def run_one(index_dir: Path, reads_dir: Path, reads: int, length: int, threads: 
         "-o", str(quant_out),
     ]
 
-    proc = subprocess.run(cmd, capture_output=True, text=True)
-    metrics = parse_time_v(proc.stderr)
-    metrics.update({
+    wall_start = time.time()
+    with open(log_path, "w") as log_file:
+        proc = subprocess.Popen(cmd, stdout=log_file, stderr=subprocess.STDOUT)
+        _, status, usage = os.wait4(proc.pid, 0)
+    wall_time_sec = time.time() - wall_start
+
+    returncode = os.WEXITSTATUS(status) if os.WIFEXITED(status) else -1
+    cpu_time = usage.ru_utime + usage.ru_stime
+    cpu_percent = round(100 * cpu_time / wall_time_sec) if wall_time_sec > 0 else None
+    peak_mem_mb = usage.ru_maxrss / 1024  # ru_maxrss is in KB on Linux
+
+    return {
         "reads": reads,
         "read_length": length,
         "threads": threads,
-        "returncode": proc.returncode,
-    })
-    return metrics
+        "wall_time_sec": round(wall_time_sec, 3),
+        "cpu_percent": cpu_percent,
+        "peak_mem_mb": round(peak_mem_mb, 1),
+        "returncode": returncode,
+    }
 
 
 def main():
