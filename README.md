@@ -3,9 +3,12 @@
 Performance benchmarking of [Salmon](https://github.com/COMBINE-lab/salmon) RNA-seq transcript
 quantification across HPC nodes at PSC / CMU CompBio.
 
-**Goal:** unlike the original Salmon papers (Patro et al. 2017), which benchmark *accuracy* against
-ground-truth expression profiles, this project benchmarks **performance** — wall time, CPU
-utilization, and peak memory — to help PSC users choose the right node for their RNA-seq workloads.
+**Goal:** The original Salmon papers (Patro et al. 2017) benchmark quantification **accuracy**. This project
+instead benchmarks **performance** — wall time, CPU utilization, and peak memory — so PSC users can
+choose the right node and thread count for their RNA-seq workloads. Reads are generated with
+**dwgsim** 
+We sweep the human GENCODE transcriptome across **1M–50M reads × 76–150 bp × 1–32 threads**, on **lanec2** (lab
+workstation) and **Bridges-2 RM** (CPU partition). Salmon is CPU-only, so no GPU is involved.
 
 ## Benchmark dimensions
 
@@ -17,6 +20,38 @@ utilization, and peak memory — to help PSC users choose the right node for the
 | Nodes | lanec2, Bridges-2 RM (CPU partition) |
 | Metrics | wall time, CPU utilization, peak memory (RSS), index time vs. quant time |
 | Data | synthetic reads generated with Flux Simulator (data-generation method only, borrowed from Patro et al. 2017 — our goal is performance, not accuracy) |
+
+## Results Summary
+
+Full 108-run matrix (9 datasets × 6 thread counts × 2 nodes) completed; all runs returned cleanly.
+Raw CSVs are in [`results/`](results/); full analysis in [`benchmarking.md`](benchmarking.md).
+
+**Headline numbers (human reference):**
+
+- **Optimal thread count: 8–16** 
+- **1 → 8 threads: up to ~6× faster.** **8 → 32 threads: no gain, often slower.**
+- **Peak memory 2.6–6.6 GB**
+- **lanec2 vs Bridges-2 RM:** tied at 1 thread; lanec2 is ~15% / 29% / 46% faster at 8 / 16 / 32 threads.
+
+**Representative workload — human, 50M reads, 150 bp** (**bold** = fastest):
+
+| Threads | lanec2 wall (s) | Bridges-2 RM wall (s) | Peak mem (GB) |
+|---|---|---|---|
+| 1 | 3105 | 3058 | ~4.8 |
+| 2 | 1555 | 1689 | ~4.7 |
+| 4 | 830 | 949 | ~4.8 |
+| 8 | 492 | 567 | ~4.9 |
+| **16** | **385** | **483** | ~4.9 |
+| 32 | 386 | 625 | ~5.2 |
+
+## Guide for Users
+
+- **Threads:** request **8–16**. Requesting more than 16 wastes your allocation and can make the job slower.
+- **Memory:** budget **~8 GB** for a human-scale index: memory is not the bottleneck on either node.
+- **Which node:**
+  - **lanec2** — a single job runs as fast or faster here, with no queue. Best for one-off runs.
+  - **Bridges-2 RM** — choose it to run **many jobs in parallel** or to free up the shared lab
+    machine. Trade-off: queue wait, and you need an RM allocation. Not faster for a single job.
 
 ## Repository layout
 
