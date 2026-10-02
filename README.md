@@ -19,7 +19,7 @@ workstation) and **Bridges-2 RM** (CPU partition). Salmon is CPU-only, so no GPU
 | Threads (`salmon --threads`) | 1, 2, 4, 8, 16, 32 |
 | Nodes | lanec2, Bridges-2 RM (CPU partition) |
 | Metrics | wall time, CPU utilization, peak memory (RSS), index time vs. quant time |
-| Data | synthetic reads generated with Flux Simulator (data-generation method only, borrowed from Patro et al. 2017 — our goal is performance, not accuracy) |
+| Data | synthetic reads generated with **dwgsim** |
 
 ## Results Summary
 
